@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">bikeRadar</string>
+    <string name="registrate">Registrate</string>
+    <string name="log_in">Log in</string>
+    <string name="welcome">Добро пожаловать в BikeRadar</string>
+    <string name="register_or_login">Войдите или зарегистрируйтесь, чтобы начать</string>
+    <string name="login">Вход</string>
+    <string name="register">Зарегистрироваться</string>
+</resources>
