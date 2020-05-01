@@ -43,7 +43,7 @@ public class LoginActivity extends AppCompatActivity {
 
                     @Override
                     public void handleFault(BackendlessFault fault) {
-                        Log.e("Error in Logging in",fault.getMessage());
+                        Log.e("Error in Logging in", fault.getMessage());
                     }
                 }, true);
             }

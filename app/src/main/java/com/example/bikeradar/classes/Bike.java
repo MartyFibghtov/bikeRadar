@@ -3,7 +3,7 @@ package com.example.bikeradar.classes;
 public class Bike {
     public String name;
     public String objectId;
-    String photo_link;
+    String photo_url;
     String phone_number;
     String location;
     LocationTime[] history;
