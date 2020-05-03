@@ -3,6 +3,7 @@ package com.example.bikeradar.activities;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -25,4 +26,12 @@ public class addNewBikeActivity extends AppCompatActivity {
         submitButton = findViewById(R.id.submit_button);
         // TODO add bike to user
     }
+
+    private View.OnClickListener uploadPhotoButtonListener = new View.OnClickListener(){
+
+        @Override
+        public void onClick(View v) {
+
+        }
+    };
 }
