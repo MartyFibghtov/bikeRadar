@@ -27,7 +27,9 @@ import com.example.bikeradar.Constants;
 import com.example.bikeradar.classes.Bike;
 import com.example.bikeradar.R;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class MainMenuActivity extends AppCompatActivity {
 
@@ -37,7 +39,6 @@ public class MainMenuActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        Toast.makeText(this, "On start", Toast.LENGTH_SHORT).show();
         IntentFilter intentFilter = new IntentFilter(); // обработчик результатат работы сервиса к
         intentFilter.addAction("com.example.bikeradar.ADD_BIKE_SUCCESS");
         intentFilter.addAction("com.example.bikeradar.ADD_BIKE_FAILURE");
@@ -62,6 +63,7 @@ public class MainMenuActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
+
         super.onStop();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
     }

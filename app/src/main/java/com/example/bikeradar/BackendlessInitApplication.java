@@ -2,6 +2,7 @@ package com.example.bikeradar;
 
 import android.app.Application;
 import android.content.Intent;
+import android.os.StrictMode;
 
 import com.backendless.Backendless;
 
@@ -11,6 +12,8 @@ public class BackendlessInitApplication extends Application {
     public static final String SERVER_URL = "https://api.backendless.com";
     @Override
     public void onCreate() {
+        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+        StrictMode.setVmPolicy(builder.build());
         super.onCreate();
         Backendless.setUrl(SERVER_URL);
         Backendless.initApp( getApplicationContext(),
