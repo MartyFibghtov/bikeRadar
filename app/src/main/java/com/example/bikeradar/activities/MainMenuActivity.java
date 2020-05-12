@@ -24,6 +24,7 @@ import com.backendless.BackendlessUser;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
 import com.example.bikeradar.AddBikeService;
+import com.example.bikeradar.BikeAdapter;
 import com.example.bikeradar.Constants;
 import com.example.bikeradar.classes.Bike;
 import com.example.bikeradar.R;
@@ -31,11 +32,14 @@ import com.example.bikeradar.R;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class MainMenuActivity extends AppCompatActivity {
 
-    private ArrayList<String> bikes;
-    private ArrayAdapter<String> bikeListAdapter;
+    public Bike[] bikes;
+    public ListView lv;
+    BikeAdapter adapter;
+    List<Bike> myList = new ArrayList<Bike>();
 
     @Override
     protected void onStart() {
@@ -51,6 +55,20 @@ public class MainMenuActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_menu);
 
+
+        ListView lv = (ListView) findViewById(R.id.bikes_list);  // get list view
+        //adapter = new BikeAdapter(this, bikes); // create adapter
+        adapter = new BikeAdapter(this, myList); // create adapter
+        lv.setAdapter(adapter);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Intent intent = new Intent(getApplicationContext(), BikeTrackActivity.class);
+                intent.putExtra("bikeId", myList.get(i).objectId);
+                startActivity(intent);
+            }
+        });
+
         showBikes();
 
         // Log out button
@@ -64,7 +82,6 @@ public class MainMenuActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
-
         super.onStop();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
     }
@@ -163,7 +180,7 @@ public class MainMenuActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainMenuActivity.this, AddBikeService.class);
                 intent.setAction(Constants.ACTION_ADD_EXISTING_BIKE);
                 intent.putExtra("userId", currUser.getObjectId());
-                intent.putExtra("bikeId", "D26B6CC2-33E3-65CE-FF9B-7D1048DED200");
+                intent.putExtra("bikeId", bikeId);
 
                 MainMenuActivity.this.startService(intent);
             }
@@ -177,21 +194,6 @@ public class MainMenuActivity extends AppCompatActivity {
     }
 
     private void showBikes(){
-        bikes = new ArrayList<>();
-        bikeListAdapter = new ArrayAdapter<>(
-                this, android.R.layout.simple_list_item_1, bikes);
-
-        ListView bikesList= (ListView) findViewById(R.id.bikes_list);
-        bikesList.setAdapter(bikeListAdapter);
-
-        bikesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Intent intent = new Intent(getApplicationContext(), BikeTrackingsActivity.class);
-                intent.putExtra("bikeId", );
-                startActivity(intent);
-            }
-        });
 
 
         String currentUserId = Backendless.UserService.loggedInUser(); // get user id
@@ -202,16 +204,13 @@ public class MainMenuActivity extends AppCompatActivity {
             @Override
             public void handleResponse(BackendlessUser user) {
                 Object[] bikeObjects = (Object[]) user.getProperty("bikes");
-                System.out.println(bikeObjects.length);
-                System.out.println(bikeObjects.toString());
 
                 if (bikeObjects.length > 0){
-                    Bike[] bikeArray = (Bike[]) bikeObjects;
-                    for (Bike bike : bikeArray){
-                        String name = bike.name;
-                        bikes.add(name);
-                        bikeListAdapter.notifyDataSetChanged();
+                    bikes = (Bike[]) bikeObjects;
+                    for (Bike bike : bikes){
+                        myList.add(bike);
                     }
+                    adapter.notifyDataSetChanged();
                 }
             }
 
