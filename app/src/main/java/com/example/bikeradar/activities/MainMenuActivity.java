@@ -12,6 +12,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -183,6 +184,16 @@ public class MainMenuActivity extends AppCompatActivity {
         ListView bikesList= (ListView) findViewById(R.id.bikes_list);
         bikesList.setAdapter(bikeListAdapter);
 
+        bikesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Intent intent = new Intent(getApplicationContext(), BikeTrackingsActivity.class);
+                intent.putExtra("bikeId", );
+                startActivity(intent);
+            }
+        });
+
+
         String currentUserId = Backendless.UserService.loggedInUser(); // get user id
 
         Backendless.Data.mapTableToClass("bikes", Bike.class ); // match table resp to class
@@ -191,6 +202,9 @@ public class MainMenuActivity extends AppCompatActivity {
             @Override
             public void handleResponse(BackendlessUser user) {
                 Object[] bikeObjects = (Object[]) user.getProperty("bikes");
+                System.out.println(bikeObjects.length);
+                System.out.println(bikeObjects.toString());
+
                 if (bikeObjects.length > 0){
                     Bike[] bikeArray = (Bike[]) bikeObjects;
                     for (Bike bike : bikeArray){

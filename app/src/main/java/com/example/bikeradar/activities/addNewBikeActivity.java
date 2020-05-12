@@ -31,7 +31,14 @@ import android.widget.ImageView;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
+import com.backendless.Backendless;
+import com.backendless.BackendlessUser;
+import com.backendless.async.callback.AsyncCallback;
+import com.backendless.exceptions.BackendlessFault;
+import com.example.bikeradar.AddBikeService;
+import com.example.bikeradar.Constants;
 import com.example.bikeradar.R;
+import com.example.bikeradar.classes.Bike;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,7 +47,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import static android.os.Environment.getExternalStoragePublicDirectory;
 
@@ -49,7 +58,7 @@ public class addNewBikeActivity extends AppCompatActivity {
     public EditText phoneNumberField;
     public Button addPictureButton;
     public Button submitButton;
-
+    String currentPhotoPath;
 
 
     @Override
@@ -59,9 +68,13 @@ public class addNewBikeActivity extends AppCompatActivity {
 
         nameField = findViewById(R.id.name_field);
         phoneNumberField = findViewById(R.id.phone_number_field);
+
         addPictureButton = findViewById(R.id.add_picture_button);
-        addPictureButton.setOnClickListener(uploadPhotoButtonListener);
         submitButton = findViewById(R.id.submit_button);
+
+        addPictureButton.setOnClickListener(uploadPhotoButtonListener);
+        submitButton.setOnClickListener(submitButtonListener);
+
 
 
         // TODO add bike to user
@@ -73,6 +86,62 @@ public class addNewBikeActivity extends AppCompatActivity {
             TakePictureIntent();
         }
     };
+
+    private View.OnClickListener submitButtonListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            //String regexStr = "^(\\s*)?(\\+)?([- _():=+]?\\d[- _():=+]?){10,14}(\\s*)?$";
+            String regexStr = "^((8|\\+7)[\\- ]?)?(\\(?\\d{3}\\)?[\\- ]?)?[\\d\\- ]{7,10}$";
+            final String name = nameField.getText().toString();
+            final String phoneNumber = phoneNumberField.getText().toString();
+            if (phoneNumber.matches(regexStr)){
+                uploadBike(name, phoneNumber);
+            } else {
+                Toast.makeText(getApplicationContext(), "Not a phone Number", Toast.LENGTH_LONG).show();
+            }
+        }
+    };
+
+    public void uploadBike(String name, String phoneNumber) {
+        HashMap<String, String> bike = new HashMap<String, String>();
+        bike.put( "name", name );
+        bike.put( "phone_number", phoneNumber );
+
+        Backendless.Data.of( "Bikes" ).save(bike, new AsyncCallback<Map>() {
+            public void handleResponse( Map savedBike ){
+                final String currentUserId = Backendless.UserService.loggedInUser();
+                final String bikeId = (String) savedBike.get("objectId");
+
+                Backendless.Data.of(BackendlessUser.class).findById(currentUserId, new AsyncCallback<BackendlessUser>() {
+                    @Override
+                    public void handleResponse(BackendlessUser currUser) {
+                        Intent intent = new Intent(getApplicationContext(), AddBikeService.class);
+                        intent.setAction(Constants.ACTION_ADD_EXISTING_BIKE);
+                        intent.putExtra("userId", currUser.getObjectId());
+                        intent.putExtra("bikeId", bikeId);
+
+                        getApplicationContext().startService(intent);
+                    }
+
+                    @Override
+                    public void handleFault(BackendlessFault fault) {
+                        Log.i("addBike", fault.getMessage());
+                    }
+                });
+                Log.i("uploadedBike", savedBike.toString());
+            }
+            @Override
+            public void handleFault( BackendlessFault fault ) {
+                Log.i("Error uploading bike", fault.getMessage());
+
+            }
+        });
+    }
+
+
+
+
+
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_TAKE_PHOTO = 1;
@@ -113,11 +182,9 @@ public class addNewBikeActivity extends AppCompatActivity {
                 System.out.println(inFile.getName());
             }
         } else {
-            Log.i("ПОШЛО НАХУЙ", String.valueOf(requestCode) + String.valueOf(resultCode));
+            Log.i("Taking photo", String.valueOf(requestCode) + String.valueOf(resultCode));
         }
     }
-
-    String currentPhotoPath;
 
 
     private File createImageFile() throws IOException {
