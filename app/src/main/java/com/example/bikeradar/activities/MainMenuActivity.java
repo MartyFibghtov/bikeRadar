@@ -13,7 +13,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -29,9 +28,8 @@ import com.example.bikeradar.Constants;
 import com.example.bikeradar.classes.Bike;
 import com.example.bikeradar.R;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.List;
 
 public class MainMenuActivity extends AppCompatActivity {
@@ -207,9 +205,7 @@ public class MainMenuActivity extends AppCompatActivity {
 
                 if (bikeObjects.length > 0){
                     bikes = (Bike[]) bikeObjects;
-                    for (Bike bike : bikes){
-                        myList.add(bike);
-                    }
+                    myList.addAll(Arrays.asList(bikes));
                     adapter.notifyDataSetChanged();
                 }
             }

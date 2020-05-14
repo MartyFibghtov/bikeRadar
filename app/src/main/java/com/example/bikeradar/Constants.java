@@ -6,7 +6,11 @@ public class Constants {
     public static final String ACTION_ADD_NEW_BIKE = "com.example.bikeradar.ADD_NEW_BIKE";
     public static final String BROADCAST_ADD_BIKE_SUCCESS = "com.example.bikeradar.ADD_BIKE_SUCCESS";
     public static final String BROADCAST_ADD_BIKE_FAILURE = "com.example.bikeradar.ADD_BIKE_FAILURE";
-    public static final int ACTION_ADD_CONTENT = 1;
+    public static final String MAPVIEW_BUNDLE_KEY = "MapViewBundleKey";
+    public static final int ERROR_DIALOG_REQUEST = 9001;
+    public static final int PERMISSIONS_REQUEST_ENABLE_GPS = 9002;
+    public static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 9003;
+
 
 
 }
