@@ -275,8 +275,13 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
         @Override
         public void run() {
             System.out.println("Repeating");
+            System.out.println("sms.is" + sms.id.toString());
+            System.out.println(sms.phone);
+            System.out.println(bike.phone_number);
+            System.out.println("sms_id" + sms_id);
 
-            if (!sms.id.equals(sms_id) && sms.phone.equals(bike.phone_number)) {
+            if (!sms.id.equals(sms_id)){// sms.phone.equals(bike.phone_number)) {
+                System.out.println("opa");
                 String[] coordinates = sms.text.split("!==!");
                 double latitude = Double.parseDouble(coordinates[0]);
                 double longitude = Double.parseDouble(coordinates[1]);
