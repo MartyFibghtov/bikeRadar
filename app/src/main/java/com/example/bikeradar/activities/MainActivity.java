@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
-        Intent intent = new Intent(this, BikeTrackActivity.class);
+        Intent intent = new Intent(this, WelcomeActivity.class);
         startActivity(intent);
 
 

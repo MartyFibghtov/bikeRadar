@@ -121,6 +121,8 @@ public class addNewBikeActivity extends AppCompatActivity {
                         intent.putExtra("bikeId", bikeId);
 
                         getApplicationContext().startService(intent);
+                        Intent intent2 = new Intent(getApplicationContext(), MainMenuActivity.class);
+                        startActivity(intent2);
                     }
 
                     @Override
@@ -173,6 +175,7 @@ public class addNewBikeActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             galleryAddPic();
             File f = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
