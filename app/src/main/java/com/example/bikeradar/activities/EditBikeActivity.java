@@ -20,6 +20,7 @@ import com.backendless.exceptions.BackendlessFault;
 import com.example.bikeradar.AddBikeService;
 import com.example.bikeradar.Constants;
 import com.example.bikeradar.R;
+import com.example.bikeradar.classes.Bike;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,22 +34,59 @@ public class EditBikeActivity extends AppCompatActivity {
     public Button submitButton;
     String currentPhotoPath;
     String bikeId;
-
+    Bike bike;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_bike);
+        Intent intent = getIntent();
+        bikeId = intent.getStringExtra("bikeId");
+
+        getBike(bikeId);
+
+        nameField = findViewById(R.id.name_field);
+        phoneNumberField = findViewById(R.id.phone_number_field);
 
         addPictureButton = findViewById(R.id.add_picture_button);
         deleteBikeButton = findViewById(R.id.delete_bike_button);
         submitButton = findViewById(R.id.submit_button);
-        deleteBikeButton.setOnClickListener(deleteButtonListener);
 
-        Intent intent = getIntent();
-        bikeId = intent.getStringExtra("bikeId");
+        deleteBikeButton.setOnClickListener(deleteButtonListener);
+        submitButton.setOnClickListener(submitButtonListener);
+//        addPictureButton.setOnClickListener();
+
+
 
     }
+
+    public void getBike(final String bikeId) {
+        Backendless.Data.mapTableToClass("bikes", Bike.class ); // match table resp to class
+        Backendless.Data.of("bikes").findById(bikeId, new AsyncCallback<Map>() {
+            @Override
+            public void handleResponse(Map response) {
+                if (response != null) {
+                    bike.setObjectId(bikeId);
+                    bike.setName((String) response.get("name"));
+                    bike.setPhoneNumber((String) response.get("phone_number"));
+                    bike.setPhotoUrl((String) response.get("photo_url"));
+                    nameField.setText(bike.name);
+                    phoneNumberField.setText(bike.phone_number);
+
+                }else{
+                    Log.e("got null", bikeId);
+                }
+            }
+
+            @Override
+            public void handleFault(BackendlessFault fault) {
+                Log.e("Getting bike", fault.getMessage());
+            }
+        });
+    }
+
+
+
 
     private View.OnClickListener deleteButtonListener = new View.OnClickListener() {
         @Override
@@ -70,47 +108,30 @@ public class EditBikeActivity extends AppCompatActivity {
 
                 }
                 Log.i("Final phone_num", phoneNumber);
-                uploadBike(name, phoneNumber);
+                updateBike(name, phoneNumber, bikeId);
             } else {
                 Toast.makeText(getApplicationContext(), "Not a phone Number", Toast.LENGTH_LONG).show();
             }
         }
     };
 
-    public void uploadBike(String name, String phoneNumber) {
+    public void updateBike(String name, String phoneNumber, String bikeId) {
         HashMap<String, String> bike = new HashMap<String, String>();
         bike.put( "name", name );
         bike.put( "phone_number", phoneNumber );
+        bike.put("objectId", bikeId);
 
-        Backendless.Data.of( "Bikes" ).save(bike, new AsyncCallback<Map>() {
+        Backendless.Data.of( "bikes" ).save(bike, new AsyncCallback<Map>() {
             public void handleResponse( Map savedBike ){
-                final String currentUserId = Backendless.UserService.loggedInUser();
-                final String bikeId = (String) savedBike.get("objectId");
-
-                Backendless.Data.of(BackendlessUser.class).findById(currentUserId, new AsyncCallback<BackendlessUser>() {
-                    @Override
-                    public void handleResponse(BackendlessUser currUser) {
-                        Intent intent = new Intent(getApplicationContext(), AddBikeService.class);
-                        intent.setAction(Constants.ACTION_ADD_EXISTING_BIKE);
-                        intent.putExtra("userId", currUser.getObjectId());
-                        intent.putExtra("bikeId", bikeId);
-
-                        getApplicationContext().startService(intent);
-                        Intent intent2 = new Intent(getApplicationContext(), MainMenuActivity.class);
-                        startActivity(intent2);
-                    }
-
-                    @Override
-                    public void handleFault(BackendlessFault fault) {
-                        Log.i("addBike", fault.getMessage());
-                    }
-                });
-                Log.i("uploadedBike", savedBike.toString());
+                Log.i("Updated bike", "savedBike");
+                Toast.makeText(getApplicationContext(), "Updated bike", Toast.LENGTH_SHORT).show();
+                Intent backToMain = new Intent(getApplicationContext(), MainMenuActivity.class);
+                startActivity(backToMain);
             }
             @Override
             public void handleFault( BackendlessFault fault ) {
-                Log.i("Error uploading bike", fault.getMessage());
-
+                Log.i("Error updating bike", fault.getMessage());
+                Toast.makeText(getApplicationContext(), "Error updating bike", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -131,15 +152,15 @@ public class EditBikeActivity extends AppCompatActivity {
                         HashMap bike = new HashMap();
                         bike.put("objectId", bikeId);
 
-                        Backendless.Data.of("BIKES").remove(bike, new AsyncCallback<Long>() {
+                        Backendless.Data.of("bikes").remove(bike, new AsyncCallback<Long>() {
                             @Override
                             public void handleResponse(Long response) {
                                 Toast.makeText(getApplicationContext(), "Deleted bike", Toast.LENGTH_SHORT).show();
                                 Intent intent2 = new Intent(getApplicationContext(), MainMenuActivity.class);
                                 startActivity(intent2);
-                                Intent intent = new Intent(Constants.BROADCAST_ADD_BIKE_SUCCESS);
-                                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
-                                sendBroadcast(intent);
+//                                Intent intent = new Intent(Constants.BROADCAST_ADD_BIKE_SUCCESS);
+//                                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+//                                sendBroadcast(intent);
                             }
 
                             @Override

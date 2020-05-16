@@ -32,7 +32,7 @@ public class BikeAdapter  extends ArrayAdapter<Bike> {
         ((TextView) convertView.findViewById(R.id.textView)).setText(bike.name);
         // Выбираем картинку для месяца
         ((ImageView) convertView.findViewById(R.id.imageView)).setImageResource(R.drawable.ic_launcher_background);
-        // TODO set image via link
+        // TODO set image via link  if (url == null) setDefault
 
         return convertView;
     }

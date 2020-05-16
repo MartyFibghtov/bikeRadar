@@ -146,6 +146,7 @@ public class MainMenuActivity extends AppCompatActivity {
 
                                         }
                                     });
+
                             final AlertDialog alertDialog2 = alertBuilder2.create();
                             alertDialog2.show();
                             alertDialog2.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
@@ -192,8 +193,6 @@ public class MainMenuActivity extends AppCompatActivity {
     }
 
     private void showBikes(){
-
-
         String currentUserId = Backendless.UserService.loggedInUser(); // get user id
 
         Backendless.Data.mapTableToClass("bikes", Bike.class ); // match table resp to class

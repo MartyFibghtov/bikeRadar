@@ -77,7 +77,7 @@ public class addNewBikeActivity extends AppCompatActivity {
 
 
 
-        // TODO add bike to user
+
     }
 
     private View.OnClickListener uploadPhotoButtonListener = new View.OnClickListener() {
@@ -113,7 +113,7 @@ public class addNewBikeActivity extends AppCompatActivity {
         bike.put( "name", name );
         bike.put( "phone_number", phoneNumber );
 
-        Backendless.Data.of( "Bikes" ).save(bike, new AsyncCallback<Map>() {
+        Backendless.Data.of( "bikes" ).save(bike, new AsyncCallback<Map>() {
             public void handleResponse( Map savedBike ){
                 final String currentUserId = Backendless.UserService.loggedInUser();
                 final String bikeId = (String) savedBike.get("objectId");
