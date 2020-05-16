@@ -172,6 +172,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
                     bike.setName((String) response.get("name"));
                     bike.setPhoneNumber((String) response.get("phone_number"));
                     bike.setPhotoUrl((String) response.get("photo_url"));
+                    onGotBike();
                 }else{
                     Log.e("got null", bikeId);
                 }

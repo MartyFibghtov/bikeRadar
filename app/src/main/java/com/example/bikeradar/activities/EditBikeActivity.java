@@ -43,6 +43,8 @@ public class EditBikeActivity extends AppCompatActivity {
         Intent intent = getIntent();
         bikeId = intent.getStringExtra("bikeId");
 
+        bike = new Bike();
+
         getBike(bikeId);
 
         nameField = findViewById(R.id.name_field);
@@ -101,8 +103,9 @@ public class EditBikeActivity extends AppCompatActivity {
             String regexStr = "^(8|\\+7)(\\d{3})(\\d{3})(\\d{2})(\\d{2})";
             final String name = nameField.getText().toString();
             String phoneNumber = phoneNumberField.getText().toString();
-            phoneNumber = phoneNumber.replaceAll("[\\s-+.^:,()]","");
-                if (phoneNumber.matches(regexStr)){
+            phoneNumber = phoneNumber.replaceAll("[\\s-.^:,()]","");
+
+            if (phoneNumber.matches(regexStr)){
                 if (phoneNumber.startsWith("8")){
                     phoneNumber = phoneNumber.replaceFirst("8","+7");
 
@@ -110,6 +113,7 @@ public class EditBikeActivity extends AppCompatActivity {
                 Log.i("Final phone_num", phoneNumber);
                 updateBike(name, phoneNumber, bikeId);
             } else {
+                    Log.i("got", phoneNumber );
                 Toast.makeText(getApplicationContext(), "Not a phone Number", Toast.LENGTH_LONG).show();
             }
         }
