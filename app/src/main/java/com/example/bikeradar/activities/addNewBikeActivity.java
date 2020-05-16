@@ -91,10 +91,16 @@ public class addNewBikeActivity extends AppCompatActivity {
         @Override
         public void onClick(View v) {
             //String regexStr = "^(\\s*)?(\\+)?([- _():=+]?\\d[- _():=+]?){10,14}(\\s*)?$";
-            String regexStr = "^((8|\\+7)[\\- ]?)?(\\(?\\d{3}\\)?[\\- ]?)?[\\d\\- ]{7,10}$";
+            String regexStr = "^(8|\\+7)(\\d{3})(\\d{3})(\\d{2})(\\d{2})";
             final String name = nameField.getText().toString();
-            final String phoneNumber = phoneNumberField.getText().toString();
+            String phoneNumber = phoneNumberField.getText().toString();
+            phoneNumber = phoneNumber.replaceAll("[\\s-+.^:,()]","");
             if (phoneNumber.matches(regexStr)){
+                if (phoneNumber.startsWith("8")){
+                    phoneNumber = phoneNumber.replaceFirst("8","+7");
+
+                }
+                Log.i("Final phone_num", phoneNumber);
                 uploadBike(name, phoneNumber);
             } else {
                 Toast.makeText(getApplicationContext(), "Not a phone Number", Toast.LENGTH_LONG).show();
@@ -121,8 +127,7 @@ public class addNewBikeActivity extends AppCompatActivity {
                         intent.putExtra("bikeId", bikeId);
 
                         getApplicationContext().startService(intent);
-                        Intent intent2 = new Intent(getApplicationContext(), MainMenuActivity.class);
-                        startActivity(intent2);
+
                     }
 
                     @Override

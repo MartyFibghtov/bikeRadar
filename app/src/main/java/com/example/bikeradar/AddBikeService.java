@@ -74,6 +74,8 @@ public class AddBikeService extends IntentService {
         Intent intent = new Intent(Constants.BROADCAST_ADD_BIKE_SUCCESS);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         sendBroadcast(intent);
+        Intent intent2 = new Intent(getApplicationContext(), MainMenuActivity.class);
+        startActivity(intent2);
     }
     private void broadcastAddExistingBikeFailure(){
         Intent intent = new Intent(Constants.BROADCAST_ADD_BIKE_FAILURE);
