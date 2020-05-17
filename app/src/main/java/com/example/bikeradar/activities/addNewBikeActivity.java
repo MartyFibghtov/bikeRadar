@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.ImageDecoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
@@ -35,6 +36,7 @@ import com.backendless.Backendless;
 import com.backendless.BackendlessUser;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
+import com.backendless.files.BackendlessFile;
 import com.example.bikeradar.AddBikeService;
 import com.example.bikeradar.Constants;
 import com.example.bikeradar.R;
@@ -44,8 +46,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -59,13 +63,15 @@ public class addNewBikeActivity extends AppCompatActivity {
     public Button addPictureButton;
     public Button submitButton;
     String currentPhotoPath;
-
+    ImageView bikePictureView;
+    String bikePictureUrl = "https://backendlessappcontent.com/0A750D92-2EB1-C0A9-FF56-01DCEC9A9A00/1857B820-8B7C-486A-8F61-CF0E9C16C314/files/bike_photos/images-2.jpeg";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_new_bike);
-
+        bikePictureView = findViewById(R.id.bike_image_view);
+        bikePictureView.setVisibility(View.INVISIBLE);
         nameField = findViewById(R.id.name_field);
         phoneNumberField = findViewById(R.id.phone_number_field);
 
@@ -78,6 +84,38 @@ public class addNewBikeActivity extends AppCompatActivity {
 
 
 
+    }
+    public void uploadPhoto(Uri imageUri){
+
+        submitButton.setClickable(false);
+        ImageDecoder.Source source = ImageDecoder.createSource(this.getContentResolver(), imageUri);
+        try {
+            Bitmap photo = ImageDecoder.decodeBitmap(source);
+            Bitmap converetdImage = getResizedBitmap(photo, 300);
+            Backendless.Files.Android.upload(converetdImage,
+                    Bitmap.CompressFormat.PNG,
+                    100,
+                    imageUri.getLastPathSegment(),
+                    "bike_photos",
+                    new AsyncCallback<BackendlessFile>() {
+                        @Override
+                        public void handleResponse(BackendlessFile response) {
+                            bikePictureUrl = response.getFileURL();
+                            submitButton.setClickable(true);
+                            Toast.makeText(getApplicationContext(), "Picture uploaded", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void handleFault(BackendlessFault fault) {
+                            Toast.makeText(getApplicationContext(), fault.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private View.OnClickListener uploadPhotoButtonListener = new View.OnClickListener() {
@@ -94,53 +132,69 @@ public class addNewBikeActivity extends AppCompatActivity {
             String regexStr = "^(8|\\+7)(\\d{3})(\\d{3})(\\d{2})(\\d{2})";
             final String name = nameField.getText().toString();
             String phoneNumber = phoneNumberField.getText().toString();
-            phoneNumber = phoneNumber.replaceAll("[\\s-+.^:,()]","");
+            phoneNumber = phoneNumber.replaceAll("[\\s-.^:,()]","");
             if (phoneNumber.matches(regexStr)){
                 if (phoneNumber.startsWith("8")){
                     phoneNumber = phoneNumber.replaceFirst("8","+7");
 
                 }
                 Log.i("Final phone_num", phoneNumber);
-                uploadBike(name, phoneNumber);
+                uploadBike(name, phoneNumber, bikePictureUrl);
             } else {
                 Toast.makeText(getApplicationContext(), "Not a phone Number", Toast.LENGTH_LONG).show();
             }
         }
     };
 
-    public void uploadBike(String name, String phoneNumber) {
+    public void uploadBike(String name, String phoneNumber, String bikePictureUrl) {
         HashMap<String, String> bike = new HashMap<String, String>();
-        bike.put( "name", name );
-        bike.put( "phone_number", phoneNumber );
+        bike.put("name", name);
+        bike.put( "phone_number", phoneNumber);
+        bike.put("photo_url", bikePictureUrl);
 
         Backendless.Data.of( "bikes" ).save(bike, new AsyncCallback<Map>() {
             public void handleResponse( Map savedBike ){
                 final String currentUserId = Backendless.UserService.loggedInUser();
                 final String bikeId = (String) savedBike.get("objectId");
+                addBikeToUser(currentUserId, bikeId);
 
-                Backendless.Data.of(BackendlessUser.class).findById(currentUserId, new AsyncCallback<BackendlessUser>() {
-                    @Override
-                    public void handleResponse(BackendlessUser currUser) {
-                        Intent intent = new Intent(getApplicationContext(), AddBikeService.class);
-                        intent.setAction(Constants.ACTION_ADD_EXISTING_BIKE);
-                        intent.putExtra("userId", currUser.getObjectId());
-                        intent.putExtra("bikeId", bikeId);
 
-                        getApplicationContext().startService(intent);
-
-                    }
-
-                    @Override
-                    public void handleFault(BackendlessFault fault) {
-                        Log.i("addBike", fault.getMessage());
-                    }
-                });
                 Log.i("uploadedBike", savedBike.toString());
             }
             @Override
             public void handleFault( BackendlessFault fault ) {
                 Log.i("Error uploading bike", fault.getMessage());
 
+            }
+        });
+    }
+
+
+
+
+    private void addBikeToUser(String userId, String bikeId){
+        HashMap<String, Object> parentObject = new HashMap<String, Object>();
+        parentObject.put( "objectId", userId );
+
+        HashMap<String, Object> childObject = new HashMap<String, Object>();
+        childObject.put( "objectId", bikeId);
+
+        ArrayList<Map> children = new ArrayList<Map>();
+        children.add( childObject );
+
+        Backendless.Data.of("Users").addRelation(parentObject, "bikes", children, new AsyncCallback<Integer>() {
+            @Override
+            public void handleResponse(Integer response) {
+                Log.i("Adding bike", "Added successfully" );
+                Intent intentBackToMainMenu = new Intent(getApplicationContext(), MainMenuActivity.class);
+                startActivity(intentBackToMainMenu);
+            }
+
+            @Override
+            public void handleFault(BackendlessFault fault) {
+                Log.i("Adding bike", fault.getMessage());
+                Intent intentBackToMainMenu = new Intent(getApplicationContext(), MainMenuActivity.class);
+                startActivity(intentBackToMainMenu);
             }
         });
     }
@@ -183,12 +237,6 @@ public class addNewBikeActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             galleryAddPic();
-            File f = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-            assert f != null;
-            File[] files = f.listFiles();
-            for (File inFile : files) {
-                System.out.println(inFile.getName());
-            }
         } else {
             Log.i("Taking photo", String.valueOf(requestCode) + String.valueOf(resultCode));
         }
@@ -218,8 +266,35 @@ public class addNewBikeActivity extends AppCompatActivity {
         Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
         File f = new File(currentPhotoPath);
         Uri contentUri = Uri.fromFile(f);
+        bikePictureView.setVisibility(View.VISIBLE);
+        ImageDecoder.Source source = ImageDecoder.createSource(this.getContentResolver(), contentUri);
+        try {
+            Bitmap bitmap = ImageDecoder.decodeBitmap(source);
+            bikePictureView.setImageBitmap(bitmap);
+            uploadPhoto(contentUri);
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
         mediaScanIntent.setData(contentUri);
         addNewBikeActivity.this.sendBroadcast(mediaScanIntent);
+    }
+    public Bitmap getResizedBitmap(Bitmap image, int maxSize) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        float bitmapRatio = (float)width / (float) height;
+        if (bitmapRatio > 1) {
+            width = maxSize;
+            height = (int) (width / bitmapRatio);
+        } else {
+            height = maxSize;
+            width = (int) (height * bitmapRatio);
+        }
+        return Bitmap.createScaledBitmap(image, width, height, true);
     }
 
 }

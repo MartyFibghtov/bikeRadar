@@ -29,6 +29,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -37,6 +38,7 @@ import android.widget.Toast;
 import com.backendless.Backendless;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
+import com.example.bikeradar.DownloadImageTask;
 import com.example.bikeradar.R;
 import com.example.bikeradar.ViewWeightAnimationWrapper;
 import com.example.bikeradar.classes.Bike;
@@ -95,9 +97,10 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
     ArrayList<LatLng> positionsList;
     TextView lastUpdatedTV;
     DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm");
-    TextView bikeName;
+    TextView bikeNameView;
     Button copyBikeIdButton;
     Button editBikeIdButton;
+    ImageView bikeImageView;
 
     PolylineOptions mPolylineOptions = new PolylineOptions();
 
@@ -109,6 +112,11 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
 
         Intent intent = getIntent();
         bikeId = intent.getStringExtra("bikeId");
+        String bikeName = intent.getStringExtra("name");
+        Log.i("BikeName", bikeName);
+        bikeNameView = findViewById(R.id.bike_name);
+        bikeNameView.setText(bikeName);
+
         if(!checkServices()){
             Intent intentBack = new Intent(this, MainMenuActivity.class);
             startActivity(intentBack);
@@ -125,10 +133,13 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
         mProgressBar.setVisibility(View.INVISIBLE);
+        bikeImageView = findViewById(R.id.bike_image_view);
 
         positionsList = new ArrayList<>();
 
         lastUpdatedTV = findViewById(R.id.last_updated);
+        bikeImageView = findViewById(R.id.bike_image_view);
+
 
         // Buttons
         startTrackingButton = (Button) findViewById(R.id.start_tracking_button);
@@ -145,7 +156,8 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
         mBikeView = findViewById(R.id.bike_view);
         mMapContainer = findViewById(R.id.map_container);
 
-        bikeName = findViewById(R.id.bike_name);
+        bikeNameView = findViewById(R.id.bike_name);
+        bikeNameView.setText(bikeName);
 
         initGoogleMap(savedInstanceState);
 
@@ -189,7 +201,9 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
         while (mGoogleMap==null){
             // do nothing
         }
-        bikeName.setText(bike.name);
+        bikeNameView.setText(bike.name);
+        bikeImageView.setVisibility(View.VISIBLE);
+        new DownloadImageTask(bikeImageView).execute(bike.photo_url);
         startTrackingButton.setOnClickListener(startTrackingListener);
         copyBikeIdButton.setOnClickListener(copyToClipboardListener);
         startTrackingButton.setActivated(true);

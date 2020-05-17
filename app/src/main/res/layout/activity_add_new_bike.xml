@@ -37,6 +37,13 @@
         tools:layout_editor_absoluteY="311dp"
         android:layout_gravity="center"/>
 
+    <ImageView
+        android:id="@+id/bike_image_view"
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:layout_gravity="center_horizontal"
+        app:srcCompat="@drawable/ic_launcher_background" />
+
     <Button
         android:id="@+id/submit_button"
         android:layout_width="wrap_content"
@@ -45,5 +52,7 @@
         tools:layout_editor_absoluteX="161dp"
         tools:layout_editor_absoluteY="508dp"
     android:layout_gravity="center"/>
+
+<!--    TODO значек загрузки   -->
 
 </LinearLayout>

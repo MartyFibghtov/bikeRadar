@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.backendless.Backendless;
 import com.backendless.BackendlessUser;
@@ -43,6 +44,7 @@ public class RegistrationActivity extends AppCompatActivity {
                 Backendless.UserService.register(backendlessUser, new AsyncCallback<BackendlessUser>() {
                     @Override
                     public void handleResponse(BackendlessUser response) {
+                        Toast.makeText(getApplicationContext(),"Registered", Toast.LENGTH_SHORT).show();
                         Intent intent_register = new Intent(v.getContext(), WelcomeActivity.class);
                         startActivity(intent_register);
                     }

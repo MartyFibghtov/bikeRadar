@@ -63,6 +63,7 @@ public class MainMenuActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Intent intent = new Intent(getApplicationContext(), BikeTrackActivity.class);
                 intent.putExtra("bikeId", myList.get(i).objectId);
+                intent.putExtra("name", myList.get(i).name);
                 startActivity(intent);
             }
         });

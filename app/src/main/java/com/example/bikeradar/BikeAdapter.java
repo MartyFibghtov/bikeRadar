@@ -1,6 +1,11 @@
 package com.example.bikeradar;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,9 +15,19 @@ import android.widget.TextView;
 
 import com.example.bikeradar.classes.Bike;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 
+import static android.os.FileUtils.copy;
+
 public class BikeAdapter  extends ArrayAdapter<Bike> {
+
+    String TAG = "adapter";
 
     public BikeAdapter(Context context, List<Bike> arr) {
         super(context, R.layout.adapter_item, arr);
@@ -27,14 +42,19 @@ public class BikeAdapter  extends ArrayAdapter<Bike> {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.adapter_item, null);
         }
 
-        // Заполняем адаптер
         assert bike != null;
         ((TextView) convertView.findViewById(R.id.textView)).setText(bike.name);
-        // Выбираем картинку для месяца
-        ((ImageView) convertView.findViewById(R.id.imageView)).setImageResource(R.drawable.ic_launcher_background);
-        // TODO set image via link  if (url == null) setDefault
+        ImageView iv = convertView.findViewById(R.id.imageView);
+
+        new DownloadImageTask(iv).execute(bike.photo_url);
 
         return convertView;
     }
-
 }
+
+
+// show The Image in a ImageView
+
+
+
+

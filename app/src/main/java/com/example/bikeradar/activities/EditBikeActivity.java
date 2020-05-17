@@ -6,7 +6,12 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.ImageDecoder;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -22,6 +27,10 @@ import com.example.bikeradar.Constants;
 import com.example.bikeradar.R;
 import com.example.bikeradar.classes.Bike;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -58,9 +67,16 @@ public class EditBikeActivity extends AppCompatActivity {
         submitButton.setOnClickListener(submitButtonListener);
 //        addPictureButton.setOnClickListener();
 
-
-
     }
+
+
+    private View.OnClickListener uploadPhotoButtonListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            TakePictureIntent();
+        }
+    };
+
 
     public void getBike(final String bikeId) {
         Backendless.Data.mapTableToClass("bikes", Bike.class ); // match table resp to class
@@ -178,5 +194,86 @@ public class EditBikeActivity extends AppCompatActivity {
         AlertDialog alertDialog = alertBuilder.create();
         alertDialog.show();
     }
+
+
+
+    static final int REQUEST_IMAGE_CAPTURE = 1;
+    static final int REQUEST_TAKE_PHOTO = 1;
+
+    private void TakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        // проверяем, что есть приложение способное обработать интент
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            // создать файл для фотографии
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                // ошибка, возникшая в процессе создания файла
+            }
+
+            // если файл создан, запускаем приложение камеры
+            if (photoFile != null) {
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
+                        Uri.fromFile(photoFile));
+                startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
+            } else {
+                Log.i("File", "Not created");
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+//            galleryAddPic();
+        } else {
+            Log.i("Taking photo", String.valueOf(requestCode) + String.valueOf(resultCode));
+        }
+    }
+
+
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+
+        if (!storageDir.exists()){
+            Boolean res = storageDir.mkdirs();
+        }
+        Log.i("Path _to storage", storageDir.getAbsolutePath());
+        Log.i("Storage exists:", String.valueOf(storageDir.exists()));
+
+        File image = File.createTempFile(imageFileName, ".jpg", storageDir.getAbsoluteFile());
+        currentPhotoPath = image.getAbsolutePath();
+        Log.i("path to photo:", currentPhotoPath);
+
+        return image;
+    }
+
+//    private void galleryAddPic() {
+//        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+//        File f = new File(currentPhotoPath);
+//        Uri contentUri = Uri.fromFile(f);
+//        bikePictureView.setVisibility(View.VISIBLE);
+//        ImageDecoder.Source source = ImageDecoder.createSource(this.getContentResolver(), contentUri);
+//        try {
+//            Bitmap bitmap = ImageDecoder.decodeBitmap(source);
+//            bikePictureView.setImageBitmap(bitmap);
+//            uploadPhoto(contentUri);
+//
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//
+//        mediaScanIntent.setData(contentUri);
+//        addNewBikeActivity.this.sendBroadcast(mediaScanIntent);
+//    }
 
 }
