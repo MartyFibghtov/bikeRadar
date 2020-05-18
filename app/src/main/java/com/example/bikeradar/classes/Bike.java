@@ -13,12 +13,7 @@ public class Bike {
     LocationTime[] history;
 
 
-    public LocationTime get_current_location(){
-        String time = "8:00";
-        String location = "хуй знает где";
-        LocationTime locationTime = new LocationTime(location, time);
-        return locationTime;
-    }
+
 
     public void setObjectId(String objectId) {
         this.objectId = objectId;

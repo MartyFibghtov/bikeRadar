@@ -18,12 +18,14 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.View;
@@ -56,6 +58,7 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -104,6 +107,9 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
 
     PolylineOptions mPolylineOptions = new PolylineOptions();
 
+    final int PERMISSION_REQUEST_LOCATION = 100;
+    final int PERMISSION_REQUEST_SMS = 101;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,15 +120,14 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
         bikeId = intent.getStringExtra("bikeId");
         String bikeName = intent.getStringExtra("name");
         Log.i("BikeName", bikeName);
-        bikeNameView = findViewById(R.id.bike_name);
-        bikeNameView.setText(bikeName);
 
-        if(!checkServices()){
-            Intent intentBack = new Intent(this, MainMenuActivity.class);
-            startActivity(intentBack);
+        if (!isServicesOK()){
+            Intent intent_back = new Intent(this, MainMenuActivity.class);
+            startActivity(intent_back);
         }
 
-
+        bikeNameView = findViewById(R.id.bike_name);
+        bikeNameView.setText(bikeName);
 
         bike = new Bike();
         Log.i("Bike id", bikeId);
@@ -211,26 +216,168 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
 
     }
 
-    private boolean checkServices() { // check if maps are available
-        if (!isServicesOK()) {
-            Toast.makeText(this, "not available for your phone", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        if (!isLocationAllowed()){
-            Toast.makeText(this, "allow location usage", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        if (!isSmsAllowed()){
-            Toast.makeText(this, "allow SMS usage", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        if (!isGpsEnabled()){
-            Toast.makeText(this, "enable gps", Toast.LENGTH_SHORT).show();
-            return false;
+    private boolean hasPermissions() { // check if maps are available
+        int res;
+
+        String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.SEND_SMS};
+        for (String perms : permissions){
+            res = checkCallingOrSelfPermission(perms);
+            Log.e("", ""+res);
+            if (res != PackageManager.PERMISSION_GRANTED){
+                return false;
+            }
         }
         return true;
 
     }
+
+
+
+    private void requestPermsLocation(){
+        String[] permissions_location = new String[]{Manifest.permission.ACCESS_FINE_LOCATION};
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            Log.d("requesting location", "start");
+            requestPermissions(permissions_location, PERMISSION_REQUEST_LOCATION);
+            Log.d("requesting location", "stop");
+        }
+    }
+
+    private void requestPermsSMS(){
+        String[] permissions_sms = new String[]{Manifest.permission.SEND_SMS};
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            Log.d("requesting sms", "start");
+            requestPermissions(permissions_sms, PERMISSION_REQUEST_SMS);
+            Log.d("requesting sms", "stop");
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        boolean allowed = true;
+
+        switch (requestCode) {
+            case PERMISSION_REQUEST_LOCATION:
+            case PERMISSION_REQUEST_SMS:
+                for (int res : grantResults){
+                    allowed = allowed && (res == PackageManager.PERMISSION_GRANTED);
+                }
+
+                break;
+
+            default:
+                allowed = false;
+                break;
+
+
+        }
+
+        if (allowed) {
+            startTracking();
+        } else{
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                if (shouldShowRequestPermissionRationale(Manifest.permission_group.LOCATION)){
+                    Toast.makeText(this, "Location Permission Denied", Toast.LENGTH_SHORT).show();
+                } else if (shouldShowRequestPermissionRationale(Manifest.permission_group.SMS)){
+                    Toast.makeText(this, "SMS Permission Denied", Toast.LENGTH_SHORT).show();
+                } else {
+                    showNoLocationSMSPermissionSnackbar();
+                }
+            }
+        }
+
+    }
+
+    public void showNoLocationSMSPermissionSnackbar(){
+        Snackbar.make(BikeTrackActivity.this.findViewById(R.id.activity_bike_track_view), "Location and permission isn`t granted", Snackbar.LENGTH_LONG)
+                .setAction("SETTINGS", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openApplicationSettings();
+
+                        Toast.makeText(getApplicationContext(),
+                                "Open permissions and grant sms and location permission",
+                                Toast.LENGTH_LONG)
+                                .show();
+                    }
+                })
+                .show();
+    }
+
+    public void openApplicationSettings(){
+        Intent appSettingsIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:" + getPackageName()));
+        startActivityForResult(appSettingsIntent, PERMISSION_REQUEST_LOCATION);
+        startActivityForResult(appSettingsIntent, PERMISSION_REQUEST_SMS);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PERMISSION_REQUEST_LOCATION){
+            if (hasPermissions()){
+                startTracking();
+            }
+            return;
+        } else if (requestCode == PERMISSION_REQUEST_SMS){
+            if (hasPermissions()){
+                startTracking();
+            }
+            return;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public void requestPermissionsWithRationale(){
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)){
+            Log.e("request location", "1");
+            final String message = "Location permission is needed to show you on map";
+
+            Snackbar.make(BikeTrackActivity.this.findViewById(R.id.activity_bike_track_view), message, Snackbar.LENGTH_LONG)
+                    .setAction("GRANT", new View.OnClickListener(){
+
+                        @Override
+                        public void onClick(View v) {
+                            requestPermsLocation();
+                        }
+                    })
+                    .show();
+        }
+        else if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.SEND_SMS)) {
+            Log.i("request location", "2");
+            final String message = "SMS permission is needed to communicate with tracker";
+
+            Snackbar.make(BikeTrackActivity.this.findViewById(R.id.activity_bike_track_view), message, Snackbar.LENGTH_LONG)
+                    .setAction("GRANT", new View.OnClickListener() {
+
+                        @Override
+                        public void onClick(View v) {
+                            requestPermsSMS();
+                        }
+                    })
+                    .show();
+        } else {
+            Log.i("request location", "3");
+            requestPermsSMS();
+        }
+    }
+
+    private View.OnClickListener startTrackingListener = new View.OnClickListener(){
+        @RequiresApi(api = Build.VERSION_CODES.O)
+        @Override
+        public void onClick(View v) {
+            if (hasPermissions()) {
+                Log.e("Start tracking", "has permissions");
+                startTracking();
+            } else {
+                Log.e("Start tracking", "doesnt have permissions");
+                requestPermissionsWithRationale();
+            }
+        }
+    };
+
+
 
     public boolean isGpsEnabled(){ // IS GPS ENABLED?
         final LocationManager manager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
@@ -242,28 +389,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
         return true;
     }
 
-    public boolean isSmsAllowed() {
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED) {
-            return true;
 
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, PackageManager.PERMISSION_GRANTED);
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_SMS}, PackageManager.PERMISSION_GRANTED);
-            return false;
-
-        }
-    }
-
-    public boolean isLocationAllowed() {
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            return true;
-
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, PackageManager.PERMISSION_GRANTED);
-            return false;
-        }
-    }
 
     private void buildAlertMessageNoGps() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -320,13 +446,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
     };
 
 
-    private View.OnClickListener startTrackingListener = new View.OnClickListener(){
-        @RequiresApi(api = Build.VERSION_CODES.O)
-        @Override
-        public void onClick(View v) {
-            startTracking();
-        }
-    };
+
 
     private View.OnClickListener changeLayoutState = new View.OnClickListener() {
         @Override
@@ -421,6 +541,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
             mHandler.postDelayed(this, 2000);
         }
     };
+
 
 
 
@@ -541,6 +662,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
         ClipData clip =ClipData.newPlainText("BikeId", text);
         clipboard.setPrimaryClip(clip);
     }
+
     View.OnClickListener copyToClipboardListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -548,6 +670,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
             Toast.makeText(getApplicationContext(), "Coppied bike ID!", Toast.LENGTH_SHORT).show();
         }
     };
+
 
 }
 

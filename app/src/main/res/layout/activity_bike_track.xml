@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:weightSum="100"
     android:orientation="vertical"
-    android:background="@color/white">
+    android:background="@color/white"
+    android:id="@+id/activity_bike_track_view">
 
     <LinearLayout
             android:layout_width="match_parent"
@@ -14,30 +16,50 @@
             android:orientation="vertical"
             android:id="@+id/bike_view">
 
+
         <TextView
             android:id="@+id/bike_name"
+            android:textSize="50dp"
+            android:layout_gravity="center_horizontal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
+
         <ImageView
             android:layout_width="200dp"
             android:layout_height="200dp"
+            android:layout_gravity="center_horizontal"
             android:id="@+id/bike_image_view"/>
+
+
 
         <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
-            <Button
-                android:id="@+id/edit_bike_button"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Edit bike"/>
+                android:layout_gravity="center_horizontal">
 
-            <Button
-                android:id="@+id/copy_bike_id_button"
+                <Button
+                    android:id="@+id/edit_bike_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Edit bike"/>
+
+                <Button
+                    android:id="@+id/copy_bike_id_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Copy bike ID"/>
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Copy bike ID"/>
+                android:layout_gravity="center_horizontal">
 
             <Button
                 android:id="@+id/start_tracking_button"
@@ -49,13 +71,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Stop Tracking"/>
-
             </LinearLayout>
 
-
-
-
-
+            </LinearLayout>
 
     </LinearLayout>
 
@@ -73,7 +91,7 @@
             <ImageButton
                 android:layout_width="35dp"
                 android:layout_height="35dp"
-                android:src="@drawable/bikeradar_logo"
+                android:src="@drawable/common_full_open_on_phone"
                 android:background="@color/white"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"

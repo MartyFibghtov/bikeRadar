@@ -37,10 +37,17 @@
         tools:layout_editor_absoluteY="311dp"
         android:layout_gravity="center"/>
 
+    <ImageView
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="center"
+        android:id="@+id/bike_image_view"/>
+
     <Button
         android:id="@+id/delete_bike_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:text="Delete bike"/>
 
     <Button
@@ -48,8 +55,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="submit"
-        tools:layout_editor_absoluteX="161dp"
-        tools:layout_editor_absoluteY="508dp"
         android:layout_gravity="center"/>
 
 </LinearLayout>
