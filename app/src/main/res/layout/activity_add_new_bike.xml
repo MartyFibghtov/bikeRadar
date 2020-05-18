@@ -14,8 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="name"
-        tools:layout_editor_absoluteX="108dp"
-        tools:layout_editor_absoluteY="80dp"
+        android:layout_marginHorizontal="15dp"
         android:layout_gravity="center"/>
 
     <EditText
@@ -23,8 +22,7 @@
         android:hint="phone_number"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:layout_editor_absoluteX="118dp"
-        tools:layout_editor_absoluteY="176dp"
+        android:layout_marginHorizontal="15dp"
         android:layout_gravity="center"/>
 
 
@@ -33,16 +31,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="upload_picture"
-        tools:layout_editor_absoluteX="119dp"
-        tools:layout_editor_absoluteY="311dp"
         android:layout_gravity="center"/>
 
     <ImageView
         android:id="@+id/bike_image_view"
-        android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
         android:layout_gravity="center_horizontal"
-        app:srcCompat="@drawable/ic_launcher_background" />
+        />
 
     <Button
         android:id="@+id/submit_button"

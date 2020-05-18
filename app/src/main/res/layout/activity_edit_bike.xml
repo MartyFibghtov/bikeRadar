@@ -14,8 +14,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="name"
-        tools:layout_editor_absoluteX="108dp"
-        tools:layout_editor_absoluteY="80dp"
+        android:layout_marginHorizontal="15dp"
+
         android:layout_gravity="center"/>
 
     <EditText
@@ -23,8 +23,8 @@
         android:hint="phone_number"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:layout_editor_absoluteX="118dp"
-        tools:layout_editor_absoluteY="176dp"
+        android:layout_marginHorizontal="15dp"
+
         android:layout_gravity="center"/>
 
 

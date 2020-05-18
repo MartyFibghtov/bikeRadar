@@ -219,7 +219,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
     private boolean hasPermissions() { // check if maps are available
         int res;
 
-        String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.SEND_SMS};
+        String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.SEND_SMS, Manifest.permission.READ_SMS};
         for (String perms : permissions){
             res = checkCallingOrSelfPermission(perms);
             Log.e("", ""+res);
@@ -243,7 +243,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
     }
 
     private void requestPermsSMS(){
-        String[] permissions_sms = new String[]{Manifest.permission.SEND_SMS};
+        String[] permissions_sms = new String[]{Manifest.permission.SEND_SMS, Manifest.permission.READ_SMS};
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
             Log.d("requesting sms", "start");
             requestPermissions(permissions_sms, PERMISSION_REQUEST_SMS);
@@ -255,13 +255,22 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         boolean allowed = true;
-
+        String allowed_param = "";
         switch (requestCode) {
             case PERMISSION_REQUEST_LOCATION:
+                for (int res : grantResults){
+                    allowed = allowed && (res == PackageManager.PERMISSION_GRANTED);
+                }
+
+                if (allowed) allowed_param = "location";
+
+                break;
+
             case PERMISSION_REQUEST_SMS:
                 for (int res : grantResults){
                     allowed = allowed && (res == PackageManager.PERMISSION_GRANTED);
                 }
+                if (allowed) allowed_param = "sms";
 
                 break;
 
@@ -269,16 +278,20 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
                 allowed = false;
                 break;
 
-
         }
 
-        if (allowed) {
+        if (hasPermissions()) {
             startTracking();
-        } else{
+
+        } else if (allowed_param.equals("location")){
+            requestPermsSMS();
+        } else if (allowed_param.equals("sms")) {
+            requestPermsLocation();
+        }else if (!allowed){
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                if (shouldShowRequestPermissionRationale(Manifest.permission_group.LOCATION)){
+                if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)){
                     Toast.makeText(this, "Location Permission Denied", Toast.LENGTH_SHORT).show();
-                } else if (shouldShowRequestPermissionRationale(Manifest.permission_group.SMS)){
+                } else if (shouldShowRequestPermissionRationale(Manifest.permission.READ_SMS)){
                     Toast.makeText(this, "SMS Permission Denied", Toast.LENGTH_SHORT).show();
                 } else {
                     showNoLocationSMSPermissionSnackbar();
@@ -289,7 +302,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
     }
 
     public void showNoLocationSMSPermissionSnackbar(){
-        Snackbar.make(BikeTrackActivity.this.findViewById(R.id.activity_bike_track_view), "Location and permission isn`t granted", Snackbar.LENGTH_LONG)
+        Snackbar.make(BikeTrackActivity.this.findViewById(R.id.activity_bike_track_view), "Location and SMS permission aren`t granted", Snackbar.LENGTH_LONG)
                 .setAction("SETTINGS", new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -344,7 +357,8 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
                     .show();
         }
         else if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                Manifest.permission.SEND_SMS)) {
+                Manifest.permission.SEND_SMS) || ActivityCompat.shouldShowRequestPermissionRationale(this,
+                        Manifest.permission.READ_SMS)) {
             Log.i("request location", "2");
             final String message = "SMS permission is needed to communicate with tracker";
 
@@ -553,6 +567,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
 
     public SMS checkSMS() {
         Uri smsURI = Uri.parse("content://sms/inbox");
+
         Cursor cursor = getContentResolver().query(smsURI, null, null, null, null);
         assert cursor != null;
         cursor.moveToFirst();
