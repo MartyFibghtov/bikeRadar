@@ -6,7 +6,6 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.animation.ObjectAnimator;
@@ -18,7 +17,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -44,15 +42,15 @@ import com.example.bikeradar.DownloadImageTask;
 import com.example.bikeradar.R;
 import com.example.bikeradar.ViewWeightAnimationWrapper;
 import com.example.bikeradar.classes.Bike;
+import com.example.bikeradar.classes.SMS;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import android.view.View;
+
 import android.widget.LinearLayout;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -63,52 +61,68 @@ import com.google.android.material.snackbar.Snackbar;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import static com.example.bikeradar.Constants.ERROR_DIALOG_REQUEST;
 import static com.example.bikeradar.Constants.MAPVIEW_BUNDLE_KEY;
-import static com.example.bikeradar.Constants.PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION;
 import static com.example.bikeradar.Constants.PERMISSIONS_REQUEST_ENABLE_GPS;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private String bikeId;
     private static final String TAG = "BikeTrack";
-    private boolean mLocationPermissionGranted = false;
-    private GoogleMap mGoogleMap;
-    private LatLngBounds mMapLocation;
-    private MapView mMapView;
+    private String bikeId;
     private Bike bike;
-    public Button startTrackingButton;
-    public Button stopTrackingButton;
-    public ImageButton fullScreenMapButton;
+    public SMS sms;  // костыльно
+
+    private GoogleMap mGoogleMap;
+    private MapView mMapView;
+
+
+
     boolean trackingRequired;
-    public SMS sms;
+
     public String sms_id;
     private Handler mHandler = new Handler();
+
+
     RelativeLayout mMapContainer;
     LinearLayout mBikeView;
-    private static final int MAP_LAYOUT_STATE_CONTRACTED = 0; // состояние карты не полный экран
-    private static final int MAP_LAYOUT_STATE_EXPANDED = 1; // состояние карты  полный экран
-    private int mMapLayoutState = 0;
-    ProgressBar mProgressBar;
-    boolean changeCameraView;
-    ArrayList<LatLng> positionsList;
-    TextView lastUpdatedTV;
-    DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm");
-    TextView bikeNameView;
-    Button copyBikeIdButton;
-    Button editBikeIdButton;
+
+    public TextView lastUpdatedTV;
+    public TextView bikeNameView;
+
+
+    public Button copyBikeIdButton;
+    public Button editBikeIdButton;
+    public Button startTrackingButton;
+    public Button stopTrackingButton;
+
+    public ImageButton fullScreenMapButton;
     ImageView bikeImageView;
+    ProgressBar mProgressBar;
 
     PolylineOptions mPolylineOptions = new PolylineOptions();
+    public ArrayList<LatLng> positionsList;
 
-    final int PERMISSION_REQUEST_LOCATION = 100;
-    final int PERMISSION_REQUEST_SMS = 101;
+
+
+
+
+
+
+    private boolean changeCameraView;
+    private int mMapLayoutState = 0;
+    private static final int MAP_LAYOUT_STATE_CONTRACTED = 0; // состояние карты не полный экран
+    private static final int MAP_LAYOUT_STATE_EXPANDED = 1; // состояние карты  полный экран
+
+
+    private final int PERMISSION_REQUEST_LOCATION = 100;
+    private final int PERMISSION_REQUEST_SMS = 101;
+    private final String SMS_START_TRACKING = "150";
+    private final String SMS_STOP_TRACKING = "230";
+
+    DateTimeFormatter HHmmTimeFormat = DateTimeFormatter.ofPattern("HH:mm");
 
 
     @Override
@@ -119,7 +133,6 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
         Intent intent = getIntent();
         bikeId = intent.getStringExtra("bikeId");
         String bikeName = intent.getStringExtra("name");
-        Log.i("BikeName", bikeName);
 
         if (!isServicesOK()){
             Intent intent_back = new Intent(this, MainMenuActivity.class);
@@ -168,12 +181,62 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
 
     }
 
+
+
     private View.OnClickListener editBikeListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             Intent intent = new Intent(getApplicationContext(), EditBikeActivity.class);
             intent.putExtra("bikeId", bikeId);
             startActivity(intent);
+        }
+    };
+
+
+    private View.OnClickListener copyToClipboardListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            copyToClipboard(bike.objectId);
+            Toast.makeText(getApplicationContext(), "Copied bike ID!", Toast.LENGTH_SHORT).show();
+        }
+    };
+
+
+    private View.OnClickListener startTrackingListener = new View.OnClickListener(){
+        @RequiresApi(api = Build.VERSION_CODES.O)
+        @Override
+        public void onClick(View v) {
+            if (hasPermissions()) {
+                startTracking();
+            } else {
+                requestPermissionsWithRationale();
+            }
+        }
+    };
+
+
+    private View.OnClickListener stopTrackingListener = new View.OnClickListener(){
+        @Override
+        public void onClick(View v){
+            sendSMS(bike.phone_number, SMS_STOP_TRACKING);
+            stopRepeating();
+            trackingRequired = false;
+            mProgressBar.setVisibility(View.INVISIBLE);
+        }
+    };
+
+
+    private View.OnClickListener changeLayoutState = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if(mMapLayoutState == MAP_LAYOUT_STATE_CONTRACTED){
+                mMapLayoutState = MAP_LAYOUT_STATE_EXPANDED;
+                expandMapAnimation();
+            }
+            else if(mMapLayoutState == MAP_LAYOUT_STATE_EXPANDED){
+                mMapLayoutState = MAP_LAYOUT_STATE_CONTRACTED;
+                contractMapAnimation();
+            }
         }
     };
 
@@ -222,7 +285,6 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
         String[] permissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.SEND_SMS, Manifest.permission.READ_SMS};
         for (String perms : permissions){
             res = checkCallingOrSelfPermission(perms);
-            Log.e("", ""+res);
             if (res != PackageManager.PERMISSION_GRANTED){
                 return false;
             }
@@ -236,18 +298,14 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
     private void requestPermsLocation(){
         String[] permissions_location = new String[]{Manifest.permission.ACCESS_FINE_LOCATION};
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-            Log.d("requesting location", "start");
             requestPermissions(permissions_location, PERMISSION_REQUEST_LOCATION);
-            Log.d("requesting location", "stop");
         }
     }
 
     private void requestPermsSMS(){
         String[] permissions_sms = new String[]{Manifest.permission.SEND_SMS, Manifest.permission.READ_SMS};
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-            Log.d("requesting sms", "start");
             requestPermissions(permissions_sms, PERMISSION_REQUEST_SMS);
-            Log.d("requesting sms", "stop");
         }
     }
 
@@ -287,7 +345,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
             requestPermsSMS();
         } else if (allowed_param.equals("sms")) {
             requestPermsLocation();
-        }else if (!allowed){
+        }else if (!allowed){ 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
                 if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)){
                     Toast.makeText(this, "Location Permission Denied", Toast.LENGTH_SHORT).show();
@@ -343,7 +401,6 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
     public void requestPermissionsWithRationale(){
         if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)){
-            Log.e("request location", "1");
             final String message = "Location permission is needed to show you on map";
 
             Snackbar.make(BikeTrackActivity.this.findViewById(R.id.activity_bike_track_view), message, Snackbar.LENGTH_LONG)
@@ -359,7 +416,6 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
         else if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                 Manifest.permission.SEND_SMS) || ActivityCompat.shouldShowRequestPermissionRationale(this,
                         Manifest.permission.READ_SMS)) {
-            Log.i("request location", "2");
             final String message = "SMS permission is needed to communicate with tracker";
 
             Snackbar.make(BikeTrackActivity.this.findViewById(R.id.activity_bike_track_view), message, Snackbar.LENGTH_LONG)
@@ -372,38 +428,24 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
                     })
                     .show();
         } else {
-            Log.i("request location", "3");
             requestPermsSMS();
         }
     }
 
-    private View.OnClickListener startTrackingListener = new View.OnClickListener(){
-        @RequiresApi(api = Build.VERSION_CODES.O)
-        @Override
-        public void onClick(View v) {
-            if (hasPermissions()) {
-                Log.e("Start tracking", "has permissions");
-                startTracking();
-            } else {
-                Log.e("Start tracking", "doesnt have permissions");
-                requestPermissionsWithRationale();
-            }
-        }
-    };
+
 
 
 
     public boolean isGpsEnabled(){ // IS GPS ENABLED?
         final LocationManager manager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
 
+        assert manager != null;
         if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
             buildAlertMessageNoGps();
             return false;
         }
         return true;
     }
-
-
 
     private void buildAlertMessageNoGps() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -447,83 +489,45 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
 
 
 
-    private View.OnClickListener stopTrackingListener = new View.OnClickListener(){
-        @Override
-        public void onClick(View v){
-            sendSMS(bike.phone_number, "230");
-            stopRepeating();
-            trackingRequired = false;
-            mProgressBar.setVisibility(View.INVISIBLE);
-//            Intent intent = new Intent(getApplicationContext(), BikeTrackActivity.class);
-//            startActivity(intent);
-        }
-    };
 
-
-
-
-    private View.OnClickListener changeLayoutState = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            switch (v.getId()){
-                case R.id.btn_full_screen_map:{
-
-                    if(mMapLayoutState == MAP_LAYOUT_STATE_CONTRACTED){
-                        mMapLayoutState = MAP_LAYOUT_STATE_EXPANDED;
-                        expandMapAnimation();
-                    }
-                    else if(mMapLayoutState == MAP_LAYOUT_STATE_EXPANDED){
-                        mMapLayoutState = MAP_LAYOUT_STATE_CONTRACTED;
-                        contractMapAnimation();
-                    }
-                    break;
-                }
-
-            }
-        }
-    };
 
 
 
     void startTracking(){
         trackingRequired = true;
-        mProgressBar.setVisibility(View.VISIBLE);
         changeCameraView = true;
-        sendSMS(bike.phone_number, "150");  // Init tracker
-        sms = checkSMS();
+        mProgressBar.setVisibility(View.VISIBLE);
+
+        sendSMS(bike.phone_number, "230");  // Init tracker
+        sms = checkSMS();  // Первичная СМС
         sms_id = sms.id;
         startRepeating();
 
     }
 
     public void startRepeating() {
-        smsRunnable.run();
+        trackingRunnable.run();
     }
     public void stopRepeating() {
-        mHandler.removeCallbacks(smsRunnable);
+        mHandler.removeCallbacks(trackingRunnable);
     }
 
-    private Runnable smsRunnable = new Runnable() {
+    private Runnable trackingRunnable = new Runnable() {
 
         @Override
         public void run() {
-            Log.i("tracking", "sms.is" + sms.id.toString());
-            System.out.println("sms.is" + sms.id.toString());
-            Log.i("tracking", sms.phone);
-            Log.i("tracking", bike.phone_number);
 
-
-            if (!sms.id.equals(sms_id) && sms.phone.equals(bike.phone_number)) {
+            if (!sms.id.equals(sms_id) && sms.phone.equals(bike.phone_number)) { // Got new sms
                 LocalDateTime now = LocalDateTime.now();
-                String time = timeFormat.format(now);
+                String time = HHmmTimeFormat.format(now);
                 lastUpdatedTV.setText("Последнее обновление " + time);
                 mProgressBar.setVisibility(View.INVISIBLE);
                 String[] coordinates = sms.text.split("!==!");
                 double latitude = Double.parseDouble(coordinates[0]);
                 double longitude = Double.parseDouble(coordinates[1]);
                 LatLng position = new LatLng(latitude, longitude);
+
                 positionsList.add(position);
-                
                 mGoogleMap.clear();
 
                 PolylineOptions options = new PolylineOptions().width(5).color(Color.BLUE).geodesic(true);
@@ -545,7 +549,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
                                 .position(position)
                                 .title(bike.name)
 
-                                //.icon()  TODO add image of bike
+                                //TODO add image of bike .icon()
                 );
                 Toast.makeText(getApplicationContext(), sms.text, Toast.LENGTH_SHORT).show();
                 sms_id = sms.id;
@@ -569,7 +573,7 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
         Uri smsURI = Uri.parse("content://sms/inbox");
 
         Cursor cursor = getContentResolver().query(smsURI, null, null, null, null);
-        assert cursor != null;
+
         cursor.moveToFirst();
 
         String text = cursor.getString(12);
@@ -675,16 +679,11 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
     void copyToClipboard(String text){
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip =ClipData.newPlainText("BikeId", text);
+        assert clipboard != null;
         clipboard.setPrimaryClip(clip);
     }
 
-    View.OnClickListener copyToClipboardListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            copyToClipboard(bike.objectId);
-            Toast.makeText(getApplicationContext(), "Coppied bike ID!", Toast.LENGTH_SHORT).show();
-        }
-    };
+
 
 
 }
@@ -692,23 +691,3 @@ public class BikeTrackActivity extends AppCompatActivity implements OnMapReadyCa
 
 
 
-class SMS{
-    String id;
-    String text;
-    String phone;
-
-    SMS(String id, String text, String phone) {
-        this.id = id;
-        this.text = text;
-        this.phone = phone;
-    }
-
-    @Override
-    public String toString() {
-        return "SMS{" +
-                "id='" + id + '\'' +
-                ", text='" + text + '\'' +
-                ", phone='" + phone + '\'' +
-                '}';
-    }
-}

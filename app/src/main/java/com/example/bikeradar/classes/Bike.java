@@ -1,16 +1,11 @@
 package com.example.bikeradar.classes;
 
-import com.google.android.gms.maps.model.LatLngBounds;
-
-import java.util.Arrays;
 
 public class Bike {
     public String name;
     public String photo_url;
     public String objectId;
     public String phone_number;
-    LatLngBounds location;
-    LocationTime[] history;
 
 
 
@@ -31,13 +26,6 @@ public class Bike {
         this.phone_number = phone_number;
     }
 
-    public void setLocation(LatLngBounds location) {
-        this.location = location;
-    }
-
-    public void setHistory(LocationTime[] history) {
-        this.history = history;
-    }
 
     @Override
     public String toString() {
@@ -46,8 +34,6 @@ public class Bike {
                 ", photo_url='" + photo_url + '\'' +
                 ", objectId='" + objectId + '\'' +
                 ", phone_number='" + phone_number + '\'' +
-                ", location=" + location +
-                ", history=" + Arrays.toString(history) +
                 '}';
     }
 }

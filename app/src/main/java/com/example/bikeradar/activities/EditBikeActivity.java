@@ -39,39 +39,55 @@ import java.util.Map;
 
 public class EditBikeActivity extends AppCompatActivity {
 
-    public EditText nameField;
-    public EditText phoneNumberField;
-    public Button addPictureButton;
-    public Button deleteBikeButton;
-    public Button submitButton;
-    public ImageView bikePictureView;
-    public String bikePictureUrl;
-    String currentPhotoPath;
-    String bikeId;
-    Bike bike;
+    private EditText nameField;
+    private EditText phoneNumberField;
+    private Button submitButton;
+    private ImageView bikePictureView;
+    private String bikePictureUrl;
+    private Button addPictureButton;
+    private Button deleteBikeButton;
+    private String currentPhotoPath;
+    private String bikeId;
+    private Bike bike;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_bike);
+
+        //  Получение ID велосипеда
         Intent intent = getIntent();
         bikeId = intent.getStringExtra("bikeId");
 
-        bike = new Bike();
 
+        //  Создание объекта Bike
+        bike = new Bike();
         getBike(bikeId);
 
-        nameField = findViewById(R.id.name_field);
-        phoneNumberField = findViewById(R.id.phone_number_field);
+
+        //  Нахождение кнопок
         addPictureButton = findViewById(R.id.add_picture_button);
         deleteBikeButton = findViewById(R.id.delete_bike_button);
         submitButton = findViewById(R.id.submit_button);
-        bikePictureView = findViewById(R.id.bike_image_view);
 
+        //  Присвоение кнопок
+        addPictureButton.setOnClickListener(uploadPhotoButtonListener);
         deleteBikeButton.setOnClickListener(deleteButtonListener);
         submitButton.setOnClickListener(submitButtonListener);
-        addPictureButton.setOnClickListener(uploadPhotoButtonListener);
-//        addPictureButton.setOnClickListener();
+
+
+
+        //  Текстовые поля
+        nameField = findViewById(R.id.name_field);
+        phoneNumberField = findViewById(R.id.phone_number_field);
+
+
+        //  Фотография велосипеда
+        bikePictureView = findViewById(R.id.bike_image_view);
+
+
+
+
 
     }
 
@@ -82,41 +98,6 @@ public class EditBikeActivity extends AppCompatActivity {
             TakePictureIntent();
         }
     };
-
-
-
-    public void getBike(final String bikeId) {
-        Backendless.Data.mapTableToClass("bikes", Bike.class ); // match table resp to class
-        Backendless.Data.of("bikes").findById(bikeId, new AsyncCallback<Map>() {
-            @Override
-            public void handleResponse(Map response) {
-                if (response != null) {
-                    bike.setObjectId(bikeId);
-                    bike.setName((String) response.get("name"));
-                    bike.setPhoneNumber((String) response.get("phone_number"));
-                    bike.setPhotoUrl((String) response.get("photo_url"));
-                    onGotBike();
-
-                }else{
-                    Log.e("got null", bikeId);
-                }
-            }
-
-            @Override
-            public void handleFault(BackendlessFault fault) {
-                Log.e("Getting bike", fault.getMessage());
-            }
-        });
-    }
-
-    private void onGotBike(){
-        new DownloadImageTask(bikePictureView).execute(bike.photo_url);
-        nameField.setText(bike.name);
-        phoneNumberField.setText(bike.phone_number);
-    }
-
-
-
 
     private View.OnClickListener deleteButtonListener = new View.OnClickListener() {
         @Override
@@ -138,16 +119,51 @@ public class EditBikeActivity extends AppCompatActivity {
                     phoneNumber = phoneNumber.replaceFirst("8","+7");
 
                 }
-                Log.i("Final phone_num", phoneNumber);
                 updateBike(name, phoneNumber, bikeId);
             } else {
-                    Log.i("got", phoneNumber );
                 Toast.makeText(getApplicationContext(), "Not a phone Number", Toast.LENGTH_LONG).show();
             }
         }
     };
 
-    public void updateBike(String name, String phoneNumber, String bikeId) {
+
+
+    private void getBike(final String bikeId) {
+        Backendless.Data.mapTableToClass("bikes", Bike.class ); // match table resp to class
+        Backendless.Data.of("bikes").findById(bikeId, new AsyncCallback<Map>() {
+            @Override
+            public void handleResponse(Map response) {
+                if (response != null) {
+                    bike.setObjectId(bikeId);
+                    bike.setName((String) response.get("name"));
+                    bike.setPhoneNumber((String) response.get("phone_number"));
+                    bike.setPhotoUrl((String) response.get("photo_url"));
+                    onGotBike();
+                }
+            }
+
+            @Override
+            public void handleFault(BackendlessFault fault) {
+                Log.e("Getting bike", fault.getMessage());
+            }
+        });
+    }
+
+
+    private void onGotBike(){
+        new DownloadImageTask(bikePictureView).execute(bike.photo_url);
+        nameField.setText(bike.name);
+        phoneNumberField.setText(bike.phone_number);
+    }
+
+
+
+
+
+
+
+
+    private void updateBike(String name, String phoneNumber, String bikeId) {
         HashMap<String, String> bike_map = new HashMap<String, String>();
         bike_map.put( "name", name );
         bike_map.put( "phone_number", phoneNumber );
@@ -168,7 +184,7 @@ public class EditBikeActivity extends AppCompatActivity {
         });
     }
 
-    public void deleteBike(){
+    private void deleteBike(){
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(EditBikeActivity.this)
                 .setCancelable(false)
                 .setMessage("Do you want to delete this bike?")
@@ -181,7 +197,7 @@ public class EditBikeActivity extends AppCompatActivity {
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(final DialogInterface dialog, int which) {
-                        HashMap bike_map = new HashMap();
+                        HashMap<String, String> bike_map = new HashMap<String, String>();
                         bike_map.put("objectId", bikeId);
 
                         Backendless.Data.of("bikes").remove(bike_map, new AsyncCallback<Long>() {
@@ -209,7 +225,6 @@ public class EditBikeActivity extends AppCompatActivity {
 
 
 
-    static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_TAKE_PHOTO = 1;
 
     private void TakePictureIntent() {
@@ -240,7 +255,7 @@ public class EditBikeActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+        if (requestCode == REQUEST_TAKE_PHOTO && resultCode == RESULT_OK) {
             galleryAddPic();
         } else {
             Log.i("Taking photo", String.valueOf(requestCode) + String.valueOf(resultCode));
@@ -288,7 +303,7 @@ public class EditBikeActivity extends AppCompatActivity {
         EditBikeActivity.this.sendBroadcast(mediaScanIntent);
     }
 
-    public void uploadPhoto(Uri imageUri){
+    private void uploadPhoto(Uri imageUri){
         Toast.makeText(getApplicationContext(), "Uploading photo", Toast.LENGTH_SHORT).show();
         submitButton.setClickable(false);
         ImageDecoder.Source source = ImageDecoder.createSource(this.getContentResolver(), imageUri);
@@ -322,7 +337,7 @@ public class EditBikeActivity extends AppCompatActivity {
     }
 
 
-    public Bitmap getResizedBitmap(Bitmap image, int maxSize) {
+    private Bitmap getResizedBitmap(Bitmap image, int maxSize) {
         int width = image.getWidth();
         int height = image.getHeight();
 
